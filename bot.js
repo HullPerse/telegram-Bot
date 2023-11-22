@@ -1,7 +1,8 @@
+import chalk from 'chalk';
 import ExcelJS from 'exceljs';
 import sqlite3 from 'sqlite3';
 import { Markup, Telegraf } from 'telegraf';
-import { TOKEN, fixik, issueKeyboard, redirectKeyboard, state } from './config.js';
+import { TOKEN, fixik, issueKeyboard, redirectKeyboard, state } from './config-backup.js';
 
 sqlite3.verbose();
 
@@ -40,6 +41,7 @@ bot.command('file', async (ctx) => {
               ctx.replyWithDocument({ source: buffer, filename: 'output.xlsx' })
                   .then(() => {
                       db.close();
+                      console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has requested EXCEL file');
                   })
                   .catch(err => {
                       console.error('Не удалось создать excel файл:', err);
@@ -98,6 +100,7 @@ bot.hears('Все запросы', (ctx) => {
   }).join('');
 
   ctx.reply(messageText);
+  console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has requested all issues');
 });
   }
 });
@@ -115,6 +118,7 @@ bot.hears('Завершенные', (ctx) => {
   }).join('');
 
   ctx.reply(messageText);
+  console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has requested completed issues');
 });
   }
 });
@@ -132,6 +136,7 @@ bot.hears('В процессе', (ctx) => {
   }).join('');
 
   ctx.reply(messageText);
+  console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has requested in_progress issues');
 });
   }
 });
@@ -166,6 +171,7 @@ bot.hears('Сеть', (ctx) => {
 
 bot.command('id', (ctx) => {
   ctx.reply(`chat id: ${ctx.chat.id} \nuser id: ${ctx.from.id}`)
+  console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has requested id');
 });
 
 bot.command('issue', (ctx) => {
@@ -185,6 +191,8 @@ bot.command('issue', (ctx) => {
         if (row) {
           const message = `(ID: ${row.id}): ${row.type} \n${row.commentary} \nСтатус: ${row.status}`;
           bot.telegram.sendMessage(ctx.chat.id, message, issueKeyboard);
+
+          console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), `has requested an issue with id ${chalk.cyan(row.id)}`)
         } else {
           ctx.reply('Запрос с указанным номером не найдена');
         }
@@ -224,6 +232,8 @@ bot.on('text', (ctx) => {
               `(ID: ${row.id}): ${row.type} \n${row.commentary} \nСтатус: ${row.status}`,
               issueKeyboard
             );
+
+            console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has created a new issue with id:', chalk.cyan(`${row.id}`));
           } else {
             console.log("Запрос не найден в базе данных.");
           }
@@ -256,6 +266,8 @@ bot.action('acceptIssue', (ctx) => {
       ctx.editMessageText(updatedMessageText, issueKeyboard);
 
       bot.telegram.sendMessage(dealer.categories.category1.updateChat, updatedMessageText, issueKeyboard);
+
+      console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has accepted issue with id', chalk.cyan(`${issueId}`) );
     });
   } else {
     ctx.answerCbQuery('Эта проблема уже принята в обработку');
@@ -294,6 +306,8 @@ bot.action('completeIssue', (ctx) => {
             bot.telegram.sendMessage(row.chatId, 'Ваш запрос был завершён');
 
             bot.telegram.sendMessage(dealer.categories.category1.updateChat, updatedMessageText, issueKeyboard);
+
+            console.log(chalk.bgGreen(`${ctx.from.first_name} ${ctx.from.last_name}`), 'has completed issue with id', chalk.cyan(`${issueId}`) );
           } else {
             console.log("Запрос не найден в базе данных.");
           }
@@ -312,6 +326,7 @@ ctx.editMessageText(ctx.update.callback_query.message.text, redirectKeyboard);
 bot.action('master', (ctx) => {
   ctx.answerCbQuery('Вы отправили этот запрос МАСТЕРУ ♂');
   bot.telegram.sendMessage(dealer.categories.category1.masterChat, ctx.update.callback_query.message.text, issueKeyboard);
+  console.log('issue has been redirected to', chalk.green('master'));
 });
 
 bot.action(/^slave_(\d+)$/, (ctx) => {
@@ -320,6 +335,7 @@ bot.action(/^slave_(\d+)$/, (ctx) => {
 
   if (slave) {
     bot.telegram.sendMessage(slave.chatId, ctx.update.callback_query.message.text, issueKeyboard);
+    console.log('issue has been redirected to', chalk.green(`slave${userKey}`));
   }
 });
 
